@@ -12,7 +12,7 @@ def stack_remove(docker_stack_name: str):
 def stack_get_services(docker_stack_name: str) -> List[str]:
     service_ls_process = _docker("service", "ls", "--format", '{{.Name}}', "--filter", f"name={docker_stack_name}")
 
-    _raise_if_cmd_erroneous(f"Failed listing services for stack {docker_stack_name}", service_ls_process)
+    _raise_if_cmd_erroneous(f"Failed listing services and some info for stack {docker_stack_name}", service_ls_process)
 
     try:
         service_ls_output = process.decode_output(service_ls_process.stdout)
@@ -25,7 +25,7 @@ def stack_get_services(docker_stack_name: str) -> List[str]:
 def stack_network_exists(docker_stack_name: str) -> bool:
     network_ls_process = _docker('network', 'ls', '--format', '{{ .Name }}', '--filter', f'name={docker_stack_name}')
 
-    _raise_if_cmd_erroneous(f"Failed listing networks for stack {docker_stack_name}", network_ls_process)
+    _raise_if_cmd_erroneous(f"Failed listing networks for another stack {docker_stack_name}", network_ls_process)
 
     try:
         network_ls_output = process.decode_output(network_ls_process.stdout)
@@ -77,7 +77,7 @@ def is_service_fully_replicated(docker_service_name: str) -> bool:
 
     else:
         raise errors.ScriptError(
-            f'Cannot check replication state of service {docker_service_name}, unknown service mode'
+            f'Cannot check replication state of service {docker_service_name}, unknown service mode and a looong line'
         )
 
     def map_to_task(task_id: str) -> DockerTaskState:
@@ -112,16 +112,3 @@ def is_service_running(docker_service_name: str) -> bool:
             pass
 
     return False
-
-
-def wait_for_service_running(docker_service_name: str) -> None:
-    logger.debug(f'Waiting for service {docker_service_name} to reach running state (> 10 sec)')
-
-    #yapf: disable
-    with handlers.timeout(
-        f'Wait for service {docker_service_name}',
-        CHECK_SERVICE_RUNNING_TIMEOUT
-    ):
-        #yapf: enable
-        while not is_service_running(docker_service_name):
-            time.sleep(5)
